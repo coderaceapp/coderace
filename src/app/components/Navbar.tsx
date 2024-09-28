@@ -18,12 +18,11 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
 
     const themeContext = useContext(ThemeContext);
 
-    // Safety check to ensure ThemeContext is defined
     if (!themeContext) {
         throw new Error('ThemeContext is undefined. Ensure that ThemeProvider is wrapping the component.');
     }
 
-    const { colors } = themeContext;
+    const { theme, colors } = themeContext;
 
     const handleMouseOver = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.style.borderColor = "#007BFF";
@@ -47,11 +46,12 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: colors.background,  // Use background color from theme
+                backgroundColor: colors.background,
                 padding: "5px 10px",
                 borderRadius: "15px",
                 boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
                 margin: "20px auto",
+                color: colors.text  // Ensure text color is applied from theme
             }}
         >
             <div style={{ display: "flex", gap: "15px" }}>
@@ -92,9 +92,9 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                         style={{
                             ...buttonStyles,
                             padding: "10px 15px",
-                            width: "170px",  // Increase the width to prevent wrapping
-                            backgroundColor: colors.buttonBackground,  // Use button background from theme
-                            color: colors.text,  // Use text color from theme
+                            width: "170px",
+                            backgroundColor: colors.buttonBackground,
+                            color: colors.text,
                         }}
                         onMouseOver={handleMouseOver}
                         onMouseOut={handleMouseOut}
@@ -113,13 +113,13 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                                 position: "absolute",
                                 top: "100%",
                                 left: 0,
-                                backgroundColor: colors.buttonBackground,  // Use button background from theme
-                                color: colors.text,  // Use text color from theme
+                                backgroundColor: colors.buttonBackground,
+                                color: colors.text,
                                 boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
                                 zIndex: 1,
                                 borderRadius: "5px",
                                 overflow: "hidden",
-                                minWidth: "170px",  // Match the dropdown width
+                                minWidth: "170px",
                             }}
                         >
                             <li>
@@ -132,9 +132,9 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                                         width: "100%",
                                         textAlign: "left",
                                         padding: "12px 16px",
-                                        borderBottom: `1px solid ${colors.text}`,  // Border color based on theme
-                                        backgroundColor: colors.buttonBackground,  // Dropdown background color
-                                        color: colors.text,  // Dropdown text color
+                                        borderBottom: `1px solid ${colors.text}`,
+                                        backgroundColor: colors.buttonBackground,
+                                        color: colors.text,
                                         cursor: "pointer",
                                     }}
                                 >
@@ -151,8 +151,8 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                                         width: "100%",
                                         textAlign: "left",
                                         padding: "12px 16px",
-                                        backgroundColor: colors.buttonBackground,  // Dropdown background color
-                                        color: colors.text,  // Dropdown text color
+                                        backgroundColor: colors.buttonBackground,
+                                        color: colors.text,
                                         cursor: "pointer",
                                     }}
                                 >
@@ -164,7 +164,6 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                 </div>
             </div>
 
-            {/* User Menu with buttonStyles prop */}
             <UserMenu buttonStyles={buttonStyles} />
         </nav>
     );
@@ -176,15 +175,15 @@ const buttonStyles = {
     cursor: "pointer",
     background: "none",
     outline: "none",
-    padding: "10px",  // Consistent padding for all buttons
-    height: "50px",  // Fixed height for all buttons
-    width: "150px",  // Fixed width for all buttons
-    boxSizing: "border-box" as const,  // Ensure padding and border are part of the box model
-    transition: "border-color 0.3s ease",  // Smooth transition for hover/focus
-    border: "2px solid transparent",  // Default border to ensure no layout shift
-    textAlign: "center" as const,  // Center text alignment
+    padding: "10px",
+    height: "50px",
+    width: "150px",
+    boxSizing: "border-box" as const,
+    transition: "border-color 0.3s ease",
+    border: "2px solid transparent",
+    textAlign: "center" as const,
     borderRadius: "5px",
-    backgroundColor: "#161617",  // Consistent background
+    backgroundColor: "#161617",
 
     "&:active": {
         transform: "translateY(2px)",
