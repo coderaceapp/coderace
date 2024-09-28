@@ -233,3 +233,38 @@ body {
   background-color: #1f1f1f;
   color: #ffffff;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in-left {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.fade-in-right {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.waiting-animation {
+  position: relative;
+  animation: waitingFade 1.5s infinite;
+}
+
+@keyframes waitingFade {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}

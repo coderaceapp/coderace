@@ -4,73 +4,109 @@
             "id": 1,
             "difficulty": "easy",
             "question": "Write a function that takes a list of integers as input and returns the sum of all even numbers in the list. You should iterate through the list, check each number, and only add the even ones to the sum.",
-            "expected_output": "For input [1, 2, 3, 4, 5], the output should be 6."
+            "expected_output": "For input [1, 2, 3, 4, 5], the output should be 6.",
+            "example_1": "[1, 2, 3, 4, 5]",
+            "example_2": "[1, 1, 1, 1]",
+            "example_3": "[0]"
         },
         {
             "id": 2,
             "difficulty": "easy",
             "question": "Write a function that takes a string as input and returns the reversed version of the string. Ensure that your function can handle spaces and special characters.",
-            "expected_output": "For input 'hello world', the output should be 'dlrow olleh'."
+            "expected_output": "For input 'hello world', the output should be 'dlrow olleh'.",
+            "example_1": "'hello world'",
+            "example_2": "'racecar'",
+            "example_3": "'12345'"
         },
         {
             "id": 3,
             "difficulty": "easy",
             "question": "Write a function that calculates the factorial of a given non-negative integer. The factorial of a number n is the product of all positive integers less than or equal to n (e.g., factorial(5) = 5 * 4 * 3 * 2 * 1 = 120).",
-            "expected_output": "For input 5, the output should be 120."
+            "expected_output": "For input 5, the output should be 120.",
+            "example_1": "5",
+            "example_2": "0",
+            "example_3": "7"
         },
         {
             "id": 4,
             "difficulty": "medium",
             "question": "Given a list of integers and a target value, write a function that finds all unique pairs of numbers in the list that add up to the target value. You can assume that there will be no duplicate pairs in the list, and the order of pairs doesn't matter.",
-            "expected_output": "For input [1, 2, 3, 4, 5] and target 6, the output should be [(1, 5), (2, 4)]."
+            "expected_output": "For input [1, 2, 3, 4, 5] and target 6, the output should be [(1, 5), (2, 4)].",
+            "example_1": "[1, 2, 3, 4, 5], target = 6",
+            "example_2": "[3, 1, 4, 1, 5], target = 5",
+            "example_3": "[2, 4, 6, 8], target = 10"
         },
         {
             "id": 5,
             "difficulty": "medium",
             "question": "Write a function that takes two strings as input and returns True if the strings are anagrams of each other. An anagram is formed by rearranging the letters of one word to produce the other, ignoring spaces and capitalization.",
-            "expected_output": "For input 'Listen' and 'Silent', the output should be True."
+            "expected_output": "For input 'Listen' and 'Silent', the output should be True.",
+            "example_1": "'Listen', 'Silent'",
+            "example_2": "'Triangle', 'Integral'",
+            "example_3": "'Apple', 'Pabble'"
         },
         {
             "id": 6,
             "difficulty": "medium",
             "question": "Write a function that returns the nth number in the Fibonacci sequence. The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, starting from 0 and 1. Your function should work efficiently for large n.",
-            "expected_output": "For input 7, the output should be 13."
+            "expected_output": "For input 7, the output should be 13.",
+            "example_1": "7",
+            "example_2": "10",
+            "example_3": "15"
         },
         {
             "id": 7,
             "difficulty": "medium",
             "question": "Write a function that checks if a given number is a prime number. A prime number is a number greater than 1 that has no divisors other than 1 and itself.",
-            "expected_output": "For input 11, the output should be True."
+            "expected_output": "For input 11, the output should be True.",
+            "example_1": "11",
+            "example_2": "4",
+            "example_3": "17"
         },
         {
             "id": 8,
             "difficulty": "hard",
             "question": "Write a function that finds the longest palindrome substring in a given string. A palindrome is a string that reads the same forward and backward. Your function should return the first longest palindrome if there are multiple.",
-            "expected_output": "For input 'babad', the output should be 'bab' (or 'aba')."
+            "expected_output": "For input 'babad', the output should be 'bab' (or 'aba').",
+            "example_1": "'babad'",
+            "example_2": "'cbbd'",
+            "example_3": "'a'"
         },
         {
             "id": 9,
             "difficulty": "hard",
             "question": "Write a function that solves the coin change problem. You are given a target amount and an array of coin denominations. The function should return the minimum number of coins needed to make the exact amount. Assume that you have an infinite supply of each denomination.",
-            "expected_output": "For input amount 11 and coins [1, 2, 5], the output should be 3."
+            "expected_output": "For input amount 11 and coins [1, 2, 5], the output should be 3.",
+            "example_1": "amount = 11, coins = [1, 2, 5]",
+            "example_2": "amount = 7, coins = [2, 3, 5]",
+            "example_3": "amount = 27, coins = [1, 2, 5, 10]"
         },
         {
             "id": 10,
             "difficulty": "hard",
             "question": "Write a function that generates all possible permutations of a given string. The function should return a list of strings, where each string is a different arrangement of the characters from the input string. Make sure your function can handle cases with repeated characters.",
-            "expected_output": "For input 'abc', the output should be ['abc', 'acb', 'bac', 'bca', 'cab', 'cba']."
+            "expected_output": "For input 'abc', the output should be ['abc', 'acb', 'bac', 'bca', 'cab', 'cba'].",
+            "example_1": "'abc'",
+            "example_2": "'aab'",
+            "example_3": "'xyz'"
         },
         {
             "id": 11,
             "difficulty": "hard",
             "question": "Write a function that merges two sorted linked lists into a single sorted linked list. Your function should take two linked lists as input and return a new linked list containing all the elements in sorted order.",
-            "expected_output": "For input [1, 3, 5] and [2, 4, 6], the output should be [1, 2, 3, 4, 5, 6]."
+            "expected_output": "For input [1, 3, 5] and [2, 4, 6], the output should be [1, 2, 3, 4, 5, 6].",
+            "example_1": "[1, 3, 5], [2, 4, 6]",
+            "example_2": "[5, 6, 7], [3, 8, 9]",
+            "example_3": "[0, 2, 4], [1, 3, 5]"
         },
         {
             "id": 12,
             "difficulty": "hard",
             "question": "Write a function that solves the N-Queens problem. The goal is to place N queens on an N×N chessboard such that no two queens threaten each other. The function should return one possible arrangement where the queens are placed safely.",
-            "expected_output": "For input n=4, the output should be [['.', 'Q', '.', '.'], ['.', '.', '.', 'Q'], ['Q', '.', '.', '.'], ['.', '.', 'Q', '.']]."
+            "expected_output": "For input n=4, the output should be [['.', 'Q', '.', '.'], ['.', '.', '.', 'Q'], ['Q', '.', '.', '.'], ['.', '.', 'Q', '.']].",
+            "example_1": "n = 4",
+            "example_2": "n = 8",
+            "example_3": "n = 5"
         }
     ]
 }

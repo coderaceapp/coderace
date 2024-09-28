@@ -4,9 +4,12 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { typeDefs } from './schema/typeDefs';
 import { questionResolver } from './resolvers/questionResolver';
 import http from 'http';
+const cors = require('cors');
 
 // Initialize express app
 const app = express();
+
+app.use(cors({ origin: 'http://localhost:3000' }));
 
 // Create GraphQL schema
 const schema = makeExecutableSchema({
