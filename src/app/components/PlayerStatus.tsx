@@ -12,7 +12,7 @@ const PlayerStatus: React.FC<PlayerStatusProps> = ({ connectedPlayers }) => {
                     width: '16px',
                     height: '16px',
                     borderRadius: '50%',
-                    backgroundColor: connectedPlayers[0] ? '#4CAF50' : '#FF5722',
+                    backgroundColor: connectedPlayers[0] ? 'green' : 'green',
                 }}
             ></div>
             <div
@@ -20,7 +20,7 @@ const PlayerStatus: React.FC<PlayerStatusProps> = ({ connectedPlayers }) => {
                     width: '16px',
                     height: '16px',
                     borderRadius: '50%',
-                    backgroundColor: connectedPlayers[1] ? '#4CAF50' : '#FF5722',
+                    backgroundColor: connectedPlayers[1] ? 'green' : 'green',
                 }}
             ></div>
         </div>

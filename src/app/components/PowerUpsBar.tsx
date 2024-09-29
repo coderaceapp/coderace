@@ -34,6 +34,16 @@ const PowerUpsBar: React.FC = () => {
     const [isGlowSwapActive, setIsGlowSwapActive] = useState(false);  // Add state for Glow Swap
 
     const [code, setCode] = useState<string[]>([
+        'def factorial (n):',
+        '   fact = 1',
+        '   i = n',
+        '   while i < n:',
+        '       fact *= i',
+        '       i -= 1',
+        '   return fact',
+    ]); // Initialize dummy code
+
+    const dummyCode = [
         'def add(a, b):',
         '    sum = a + b',
         '    return sum',
@@ -43,16 +53,6 @@ const PowerUpsBar: React.FC = () => {
         '',
         'if sum > 10:',
         '    print("Greater than 10")',
-    ]); // Initialize dummy code
-
-    const dummyCode = [
-        'def multiply(a, b):',
-        '    return a * b',
-        '',
-        'x = 10',
-        'y = 20',
-        'result = multiply(x, y)',
-        'print(result)',
     ]; // Additional dummy code for GetPeek modal
 
 
