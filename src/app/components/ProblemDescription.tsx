@@ -112,12 +112,12 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
             style={{
                 width: '48%',
                 backgroundColor: colors.background,
-                padding: '20px',
-                borderRadius: '15px',
+                padding: '10px',
+                borderRadius: '10px', // Adjusted border-radius
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
-                minHeight: '300px',
+                alignItems: 'flex-start', // Align items to the top
+                minHeight: '300px', // Ensure the height remains constant
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
                 color: colors.text,
                 fontFamily: 'JetBrains Mono, monospace',
@@ -135,7 +135,7 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
                             backgroundColor: colors.background,
                             color: colors.text,
                             padding: '5px',
-                            borderRadius: '10px',
+                            borderRadius: '5px', // Adjusted padding and border-radius
                             border: `1px solid ${colors.text}`,
                             cursor: 'pointer',
                             appearance: 'none',
@@ -150,8 +150,8 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
             )}
 
             {/* Problem Description */}
-            <div>
-                <h3 style={{ padding: "10px", color: '#aaaaaa', marginBottom: '15px' }}>Problem Description</h3>
+            <div style={{ width: '100%' }}> {/* Ensure full width */}
+                <h3 style={{ padding: "5px", color: '#aaaaaa', marginBottom: '10px' }}>Problem Description</h3>
                 <div style={{
                     filter: isQuestionBlurred ? 'blur(5px)' : 'none',
                     transition: 'filter 0.3s ease',
@@ -178,8 +178,8 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
                         padding: '10px',
                         borderRadius: '10px',
                         cursor: 'pointer',
-                        fontSize: '20px',
-                        marginTop: '15px',
+                        fontSize: '16px',  // Adjusted font-size for better alignment
+                        marginTop: '10px',  // Adjusted margin-top
                         border: 'none',
                     }}
                 >
@@ -197,8 +197,8 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
                         padding: '10px',
                         borderRadius: '10px',
                         cursor: 'pointer',
-                        fontSize: '20px',
-                        marginTop: '15px',
+                        fontSize: '16px', // Adjusted font-size for better alignment
+                        marginTop: '10px',  // Adjusted margin-top
                         border: 'none',
                     }}
                 >
