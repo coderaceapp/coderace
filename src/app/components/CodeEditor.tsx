@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, useContext } from 'react';
 import { useCodeMirror } from "@uiw/react-codemirror";
 import { python } from "@codemirror/lang-python";
-import { javascript } from "@codemirror/lang-javascript"; // Using JavaScript for C++
+import { javascript } from "@codemirror/lang-javascript";
 import { cpp } from "@codemirror/lang-cpp";
 import axios from 'axios';
 import LoadingAnimation from './LoadingAnimation';
 import { ThemeContext } from '../../context/ThemeContext'; // Import ThemeContext
 import { usePyodide } from '../hooks/usePyodide'; // Import usePyodide hook
-import { useEmscripten } from '../hooks/useEmscripten';
+import { EditorView } from "@codemirror/view";
+import { eventBus } from '../utils/EventBus';
 
 interface CodeEditorProps {
     code: string;
@@ -26,7 +27,9 @@ interface CodeEditorProps {
     } | null;
     setStartTimer: (shouldStart: boolean) => void;
     pyodide: any;
-    moveToNextProblem: () => void;  // Add this line to define moveToNextProblem prop
+    moveToNextProblem: () => void;
+    mode: 'single' | 'multiplayer';
+    gameStarted: boolean;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -38,12 +41,16 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     setLanguage,
     currentProblem,
     setStartTimer,
-    moveToNextProblem
+    moveToNextProblem,
+    mode,
+    gameStarted,
 }) => {
     const { pyodide, isLoading: isPyodideLoading } = usePyodide();
     const editorRef = useRef<HTMLDivElement | null>(null);
     const [isRunning, setIsRunning] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [elapsedTime, setElapsedTime] = useState(0);  // Timer state
+    const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
 
     const themeContext = useContext(ThemeContext);
 
@@ -53,6 +60,34 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
     const { colors } = themeContext;
 
+    // Timer handling functions
+    const startTimer = () => {
+        if (!timerInterval) {
+            const interval = setInterval(() => {
+                setElapsedTime(prevTime => prevTime + 1);
+            }, 1000);
+            setTimerInterval(interval);
+        }
+    };
+
+    const stopTimer = () => {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            setTimerInterval(null);
+        }
+    };
+
+    const resetTimer = () => {
+        setElapsedTime(0);
+        stopTimer();
+    };
+
+    const formatTime = (time: number) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
     const getDefaultCode = (lang: 'python' | 'javascript' | 'C++'): string => {
         switch (lang) {
             case 'python':
@@ -60,68 +95,118 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
             case 'javascript':
                 return "// Write your JavaScript code here...";
             case 'C++':
-                return "// Write your C++ code here...";
+                return `#include <iostream>
+using namespace std;
+
+int main() {
+   // Write your C++ code here...
+   return 0;
+}`;
             default:
                 return "";
         }
     };
 
+    const pasteBlockerExtension = EditorView.domEventHandlers({
+        paste: (event) => {
+            event.preventDefault(); // Prevent paste action
+        },
+    });
+
+    // Initialize the code editor with the current problem's code
     const { setContainer } = useCodeMirror({
         container: editorRef.current,
         value: code,
         height: "300px",
         extensions: [
-            language === "python" ? python() : javascript(), // Use JavaScript for C++
+            language === "python" ? python() : language === "javascript" ? javascript() : cpp(),
+            pasteBlockerExtension,
         ],
-        onChange: (value) => setCode(value),
+        onChange: (value) => {
+            setCode(value);
+            console.log('Code updated: ', value);  // Debug logging
+        },
     });
 
+    // Ensure the code editor is set up correctly
     useEffect(() => {
         if (editorRef.current) {
             setContainer(editorRef.current);
         }
     }, [editorRef.current, setContainer, language]);
 
+    // Reset code when language changes
     useEffect(() => {
         setCode(getDefaultCode(language));
     }, [language, setCode]);
 
     const handleRunCode = async () => {
-        if (isPyodideLoading) {
-            runCode('Pyodide is still loading. Please wait...');
+        console.log('Running code...');
+        if (!currentProblem) {
+            console.error("No problem selected to run code against.");
             return;
         }
 
-        if (!pyodide) {
-            runCode('Pyodide is not initialized.');
-            return;
-        }
+        if (language === 'python') {
+            if (isPyodideLoading) {
+                runCode('Pyodide is still loading. Please wait...');
+                return;
+            }
 
-        setIsRunning(true);
-        try {
-            pyodide.runPython(`
-                import sys
-                from io import StringIO
-                sys.stdout = stdout = StringIO()
-                sys.stderr = stderr = StringIO()
-            `);
+            if (!pyodide) {
+                runCode('Pyodide is not initialized.');
+                return;
+            }
 
-            await pyodide.loadPackagesFromImports(code);
-            pyodide.runPython(code);
+            setIsRunning(true);
+            try {
+                pyodide.runPython(`
+                   import sys
+                   from io import StringIO
+                   sys.stdout = stdout = StringIO()
+                   sys.stderr = stderr = StringIO()
+               `);
 
-            const stdout = pyodide.runPython("stdout.getvalue()");
-            const stderr = pyodide.runPython("stderr.getvalue()");
+                await pyodide.loadPackagesFromImports(code);
+                pyodide.runPython(code);
 
-            const output = stderr ? `Error: ${stderr}` : stdout || 'No output returned.';
-            runCode(output);
-        } catch (error) {
-            // runCode(`Error: ${error.message}`);
-        } finally {
-            setIsRunning(false);
+                const stdout = pyodide.runPython("stdout.getvalue()");
+                const stderr = pyodide.runPython("stderr.getvalue()");
+
+                const output = stderr ? `Error: ${stderr}` : stdout || 'No output returned.';
+
+                eventBus.emit("output", { message: output });
+                runCode(output);  // Pass the output back to the UI
+                console.log('Code output: ', output);  // Debug logging
+
+                return output;
+            } catch (error) {
+                console.error("Error running Python code:", error);
+            } finally {
+                setIsRunning(false);
+            }
+        } else if (language === 'javascript') {
+            setIsRunning(true);
+            try {
+                let output = '';
+                const originalLog = console.log;
+                console.log = (msg) => { output += msg + '\n'; };
+                eval(code);
+                console.log = originalLog;
+                const message = output || 'No output returned';
+                eventBus.emit("output", { message: message });
+                runCode(message);  // Pass the output back to the UI
+                console.log('Code output: ', message);  // Debug logging
+            } catch (error) {
+                console.error("Error running JavaScript code:", error);
+            } finally {
+                setIsRunning(false);
+            }
         }
     };
 
     const handleSubmitCode = async () => {
+        console.log('Submitting code:', code);
         if (!currentProblem) {
             alert("No problem selected.");
             return;
@@ -147,28 +232,38 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
                     return {
                         name: testCase.name,
+                        userOutput: response.data.user_output || 'No output',  // Add user output
+                        expectedOutput: testCase.expected_output,
                         evaluation: response.data.evaluation,
                         isCorrect: response.data.evaluation.includes("Correct"),
                     };
                 })
             );
 
-            checkCode(evaluationResults);  // Now pass the array of evaluation results
+            checkCode(evaluationResults);  // Pass the array of evaluation results
 
-            // Check if all test cases are correct
-            const allCorrect = evaluationResults.every(result => result.isCorrect === true);
+            const allCorrect = evaluationResults.every(result => result.isCorrect);
 
-            // If all examples are correct, move to the next problem
+            // Stop the timer if the code is correct
             if (allCorrect) {
-                moveToNextProblem();  // Move to the next problem
+                stopTimer();  // Stop the timer on successful code submission
+                moveToNextProblem();
             }
         } catch (error) {
-            console.error("Error submitting code with GPT:", error);
+            console.error("Error submitting code:", error);
             alert("An error occurred while submitting the code.");
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    useEffect(() => {
+        if (gameStarted) {
+            startTimer();
+        } else {
+            stopTimer();
+        }
+    }, [gameStarted]);
 
     return (
         <div
@@ -190,6 +285,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h3 style={{ color: colors.text }}>Code Interpreter</h3>
+                {/* Timer Display */}
+                <div style={{ fontSize: '1.25em', color: colors.text }}>Timer: {formatTime(elapsedTime)}</div>
             </div>
 
             <select

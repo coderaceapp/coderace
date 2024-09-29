@@ -1,100 +1,54 @@
-const WebSocket = require('ws');
-const crypto = require('crypto'); // To generate random room codes
+import { WebSocketServer } from 'ws';
 
-const wss = new WebSocket.Server({ port: 3002 });
-
-let rooms = {}; // Track rooms and player statuses
+const wss = new WebSocketServer({ port: 8080 });
+const rooms = {};
 
 wss.on('connection', (ws) => {
-    console.log('A player connected');
+    console.log('New connection established.');
 
     ws.on('message', (message) => {
         const data = JSON.parse(message);
 
-        // Create a new room with a generated room code
+        // Handle room creation
         if (data.type === 'createRoom') {
-            const roomCode = crypto.randomBytes(3).toString('hex'); // Generate a random room code
-            rooms[roomCode] = { players: 1, readyPlayers: 0 }; // Initialize room with 1 player
+            const roomCode = Math.random().toString(36).substring(2, 8);
+            rooms[roomCode] = { players: [ws] };
             ws.roomCode = roomCode;
-            ws.isHost = true;
-            console.log(`Room ${roomCode} created with 1 player.`);
-            console.log(`Current number of players in room ${roomCode}: ${rooms[roomCode].players}`); // Log number of players
-            ws.send(JSON.stringify({ type: 'roomCreated', roomCode, playerCount: 1 }));
-        }
+            ws.send(JSON.stringify({ type: 'roomCreated', roomCode }));
+            console.log(`Room created with code: ${roomCode}`);
 
-        // Join an existing room
-        if (data.type === 'joinRoom') {
-            const roomCode = data.roomCode;
-            if (rooms[roomCode] && rooms[roomCode].players < 2) {
-                rooms[roomCode].players++;
-                ws.roomCode = roomCode;
-                console.log(`Player joined room ${roomCode}. Total players: ${rooms[roomCode].players}`);
-                console.log(`Current number of players in room ${roomCode}: ${rooms[roomCode].players}`); // Log number of players
+        } else if (data.type === 'joinRoom') {
+            const room = rooms[data.roomCode];
+            if (room && room.players.length < 2) {
+                room.players.push(ws);
+                ws.roomCode = data.roomCode;
 
-                // Notify both players of updated player count
-                wss.clients.forEach(client => {
-                    if (client.roomCode === roomCode && client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            type: 'playerCountUpdate',
-                            roomCode,
-                            playerCount: rooms[roomCode].players
-                        }));
-                    }
+                // Notify both players in the room
+                room.players.forEach((player, index) => {
+                    player.send(JSON.stringify({ type: 'playerJoined', playerIndex: index }));
                 });
-
-                // Only when two players are in the room
-                if (rooms[roomCode].players === 2) {
-                    wss.clients.forEach(client => {
-                        if (client.roomCode === roomCode && client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify({ type: 'bothPlayersConnected', roomCode }));
-                        }
-                    });
-                }
+                console.log(`Player joined room: ${data.roomCode}`);
             } else {
-                ws.send(JSON.stringify({ type: 'roomFullOrNotFound', roomCode }));
-            }
-        }
-
-        // Handle player clicking 'start'
-        if (data.type === 'playerReady') {
-            const roomCode = ws.roomCode;
-            if (rooms[roomCode]) {
-                rooms[roomCode].readyPlayers++;
-                console.log(`Player in room ${roomCode} is ready. Ready players: ${rooms[roomCode].readyPlayers}`);
-
-                // If both players are ready, start the match
-                if (rooms[roomCode].readyPlayers === 2) {
-                    wss.clients.forEach(client => {
-                        if (client.roomCode === roomCode && client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify({ type: 'matchStarted', roomCode }));
-                        }
-                    });
-                }
+                ws.send(JSON.stringify({ type: 'error', message: 'Room full or does not exist' }));
+                console.log(`Failed to join room: ${data.roomCode}`);
             }
         }
     });
 
     ws.on('close', () => {
-        console.log('A player disconnected');
-        if (ws.roomCode && rooms[ws.roomCode]) {
-            rooms[ws.roomCode].players--;
-            console.log(`Player left room ${ws.roomCode}. Total players: ${rooms[ws.roomCode].players}`);
-
-            if (rooms[ws.roomCode].players === 0) {
-                console.log(`Room ${ws.roomCode} is empty. Deleting room.`);
-                delete rooms[ws.roomCode];
-            } else {
-                // Update remaining players in the room
-                wss.clients.forEach(client => {
-                    if (client.roomCode === ws.roomCode && client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            type: 'playerCountUpdate',
-                            roomCode: ws.roomCode,
-                            playerCount: rooms[ws.roomCode].players
-                        }));
-                    }
-                });
+        const roomCode = ws.roomCode;
+        if (roomCode && rooms[roomCode]) {
+            rooms[roomCode].players = rooms[roomCode].players.filter(p => p !== ws);
+            if (rooms[roomCode].players.length === 0) {
+                delete rooms[roomCode];
+                console.log(`Room ${roomCode} deleted.`);
             }
         }
     });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
 });
+
+console.log('WebSocket server running on ws://localhost:8080');

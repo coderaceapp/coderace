@@ -28,6 +28,7 @@ export const useAuth = () => {
                 username: username,
                 email: email,
                 createdAt: serverTimestamp(),
+                elo: 1400,
             });
 
             console.log("Signed up user: ", user);

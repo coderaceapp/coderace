@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
-import PlayerConnectionStatus from './PlayerConnectionStatus';
-import WrappedMultipleQuestionRetriever from './WrappedMultipleQuestionRetreiver';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { ThemeContext } from '../../context/ThemeContext';  // Import ThemeContext
+import questionsData from '../data/questions.json';
 
 interface Question {
-    id: string;
+    id: number;
     difficulty: string;
     question: string;
     expected_output: string;
@@ -22,7 +21,11 @@ interface ProblemDescriptionProps {
     onStartMatch: () => void;
     validatorOutput: string;
     isCorrect: boolean | null;
-    onProblemFetched: (problem: Question | null) => void;  // Pass the current problem to parent
+    onProblemFetched: (problem: Question | null) => void;
+    moveToNextProblem: () => void;
+    currentProblemIndex: number;
+    setStartTimer: (shouldStart: boolean) => void;
+    gameStarted: boolean;
 }
 
 const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
@@ -34,69 +37,81 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
     onStartMatch,
     validatorOutput,
     isCorrect,
-    onProblemFetched  // New prop to pass problem up to parent
+    onProblemFetched,
+    setStartTimer,
+    gameStarted
 }) => {
-    const [difficulty, setDifficulty] = useState<string>('easy');  // Default difficulty is 'easy'
-    const [problemSet, setProblemSet] = useState<Question[]>([]);  // Store a set of problems
-    const [currentProblemIndex, setCurrentProblemIndex] = useState<number>(0);  // Track current problem
-    const [completedProblems, setCompletedProblems] = useState<number>(0);  // Track completed problems
+    const [difficulty, setDifficulty] = useState<string>('easy');
+    const [problemSet, setProblemSet] = useState<Question[]>([]);
+    const [currentProblemIndex, setCurrentProblemIndex] = useState<number>(0);
+    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+    const [hasGameStarted, setHasGameStarted] = useState(false);
+    const [isQuestionBlurred, setIsQuestionBlurred] = useState(true);
+    const [showNextButton, setShowNextButton] = useState(false); // Show "Next" button after correct answer
 
     const themeContext = useContext(ThemeContext);
 
-    // Safety check to ensure ThemeContext is defined
     if (!themeContext) {
         throw new Error('ThemeContext is undefined. Ensure that ThemeProvider is wrapping the component.');
     }
 
     const { colors } = themeContext;
 
-    const currentQuestion = problemSet[currentProblemIndex];
+    // Function to fetch a new question from the same difficulty level
+    const fetchSingleQuestion = useCallback(() => {
+        const filteredQuestions = questionsData.questions.filter(q => q.difficulty === difficulty);
+        const randomQuestion = filteredQuestions[Math.floor(Math.random() * filteredQuestions.length)];
+        setProblemSet([randomQuestion]);
+        setCurrentQuestion(randomQuestion);
+        onProblemFetched(randomQuestion);
+    }, [difficulty, onProblemFetched]);
 
-    // Handle setting problem set (multiple questions)
-    const handleQuestionSetFetched = useCallback((questions: Question[]) => {
-        const newProblems = questions.slice(0, 5);
-        setProblemSet(newProblems);
-        if (newProblems.length > 0) {
-            console.log("Current Problem:", newProblems[0]);
-            onProblemFetched(newProblems[0]);  // Set the first question in the set
-        }
-    }, [onProblemFetched]);
-
-    // Move to the next problem if the user's answer is correct
+    // Ensure questions are only fetched once when the component mounts
     useEffect(() => {
-        if (isCorrect) {
-            if (currentProblemIndex < problemSet.length - 1) {
-                setTimeout(() => {
-                    const nextIndex = currentProblemIndex + 1;
-                    setCurrentProblemIndex(nextIndex);
-                    setCompletedProblems((prevCount) => prevCount + 1);
-                    console.log("Next Problem:", problemSet[nextIndex]);
-                    onProblemFetched(problemSet[nextIndex]);  // Pass the next problem to the parent
-                }, 1000);  // Delay progression to show feedback
-            } else {
-                console.log("No more problems in the set.");
-                // Optionally, show a message or reset the state
-                alert("Congratulations! You have completed all the problems.");
-                // Here you can trigger an action (e.g., fetch more problems, reset, etc.)
-            }
+        if (!hasGameStarted) {
+            fetchSingleQuestion(); // Fetch a question only once
         }
-    }, [isCorrect, currentProblemIndex, problemSet.length, onProblemFetched]);
+    }, [fetchSingleQuestion, hasGameStarted]);
 
-    // Progress Bar
-    const progressPercentage = problemSet.length
-        ? ((completedProblems) / problemSet.length) * 100
-        : 0;
+    // When a question is answered correctly, show the "Next" button
+    useEffect(() => {
+        if (isCorrect && mode === 'single') {
+            setShowNextButton(true);  // Show the "Next" button after a correct answer
+            setStartTimer(false);  // Stop the timer when the question is answered correctly
+        }
+    }, [isCorrect, mode, setStartTimer]);
 
-    // Handle difficulty selection
-    const handleDifficultyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setDifficulty(event.target.value);
+    // Handle Start Game
+    const handleStartGame = () => {
+        setIsQuestionBlurred(false);
+        setStartTimer(true);
+        setHasGameStarted(true);
+        setShowNextButton(false);  // Hide the "Next" button when a new game starts
+        onStartMatch();
+    };
+
+    // Handle changing difficulty (always present in single-player mode)
+    const handleDifficultyChange = (newDifficulty: string) => {
+        if (newDifficulty !== difficulty) {
+            setDifficulty(newDifficulty);
+            setShowNextButton(false);  // Reset the "Next" button when difficulty changes
+            fetchSingleQuestion();  // Fetch a new question from the selected difficulty
+            setStartTimer(true);  // Start the timer for the new question
+        }
+    };
+
+    // Handle moving to the next question manually (single-player)
+    const handleNextQuestion = () => {
+        setShowNextButton(false);
+        fetchSingleQuestion();  // Fetch a new question from the same difficulty level
+        setStartTimer(true);  // Restart the timer for the new question
     };
 
     return (
         <div
             style={{
                 width: '48%',
-                backgroundColor: colors.background,  // Use background color from theme
+                backgroundColor: colors.background,
                 padding: '20px',
                 borderRadius: '15px',
                 display: 'flex',
@@ -104,29 +119,24 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
                 justifyContent: 'space-between',
                 minHeight: '300px',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                color: colors.text,  // Use text color from theme
+                color: colors.text,
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: "1.25em",
             }}
         >
             {/* Difficulty Dropdown for Single Player */}
             {mode === 'single' && (
-                <div
-                    style={{
-                        marginBottom: '15px',
-                        position: 'relative',
-                    }}
-                >
-                    <label style={{ color: '#aaaaaa' }}>Select Difficulty:</label>
+                <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label style={{ color: '#aaaaaa', marginRight: '5px' }}>Difficulty:</label>
                     <select
                         value={difficulty}
-                        onChange={handleDifficultyChange}
+                        onChange={(e) => handleDifficultyChange(e.target.value)}
                         style={{
-                            backgroundColor: colors.background,  // Use dropdown background from theme
-                            color: colors.text,  // Use dropdown text color from theme
-                            padding: '10px',
+                            backgroundColor: colors.background,
+                            color: colors.text,
+                            padding: '5px',
                             borderRadius: '10px',
-                            border: `1px solid ${colors.text}`,  // Border color matches text
+                            border: `1px solid ${colors.text}`,
                             cursor: 'pointer',
                             appearance: 'none',
                             transition: 'background-color 0.3s ease',
@@ -142,56 +152,59 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({
             {/* Problem Description */}
             <div>
                 <h3 style={{ padding: "10px", color: '#aaaaaa', marginBottom: '15px' }}>Problem Description</h3>
-                {problemSet.length > 0 && problemSet[currentProblemIndex] ? (
-                    <div>
-                        <p><strong style={{ marginBottom: "10px", color: '#39FF14' }}>Difficulty:</strong> {problemSet[currentProblemIndex].difficulty}</p>
-                        <p><strong style={{ marginBottom: "10px", color: '#39FF14' }}>Question:</strong> {problemSet[currentProblemIndex].question}</p>
-                        <p><strong style={{ marginBottom: "10px", color: '#39FF14' }}>Expected Output:</strong> {problemSet[currentProblemIndex].expected_output}</p>
-                    </div>
-                ) : (
-                    <p>No question available. Please wait or check your connection.</p>
-                )}
+                <div style={{
+                    filter: isQuestionBlurred ? 'blur(5px)' : 'none',
+                    transition: 'filter 0.3s ease',
+                }}>
+                    {currentQuestion ? (
+                        <div>
+                            <p><strong style={{ color: '#39FF14' }}>Difficulty:</strong> {currentQuestion.difficulty}</p>
+                            <p><strong style={{ color: '#39FF14' }}>Question:</strong> {currentQuestion.question}</p>
+                            <p><strong style={{ color: '#39FF14' }}>Expected Output:</strong> {currentQuestion.expected_output}</p>
+                        </div>
+                    ) : (
+                        <p>Loading question...</p>
+                    )}
+                </div>
             </div>
 
-            {/* Fetch 5 problems based on difficulty */}
-            <WrappedMultipleQuestionRetriever difficulty={difficulty} onQuestionsFetched={handleQuestionSetFetched} />
-
-            {/* Player Connection Status */}
-            {mode === "multiplayer" && (
-                <PlayerConnectionStatus
-                    mode={mode}  // Use actual mode
-                    isConnected={isConnected}  // Pass actual connection status
-                    ws={ws}  // Pass WebSocket connection
-                    roomCode={roomCode}
-                    playerCount={playerCount}
-                    onStartMatch={onStartMatch}
-                />
-            )}
-
-            {/* Problem Progress Bar */}
-            <div style={{ marginBottom: '15px' }}>
-                <div
+            {/* Next Button (Visible after answering correctly in single-player mode) */}
+            {showNextButton && (
+                <button
+                    onClick={handleNextQuestion}
                     style={{
-                        backgroundColor: '#888',
-                        height: '10px',
-                        borderRadius: '5px',
-                        width: '100%',
+                        backgroundColor: colors.buttonBackground,
+                        color: colors.buttonTextRun,
+                        padding: '10px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontSize: '20px',
+                        marginTop: '15px',
+                        border: 'none',
                     }}
                 >
-                    <div
-                        style={{
-                            backgroundColor: colors.buttonTextSubmit,  // Progress bar color from theme
-                            height: '100%',
-                            width: `${progressPercentage}%`,
-                            transition: 'width 0.3s ease',
-                            borderRadius: '5px',
-                        }}
-                    />
-                </div>
-                <p style={{ color: '#aaa', textAlign: 'center', marginTop: '5px' }}>
-                    {completedProblems} / {problemSet.length} problems completed
-                </p>
-            </div>
+                    Next Question
+                </button>
+            )}
+
+            {/* Start Game Button */}
+            {!hasGameStarted && (
+                <button
+                    onClick={handleStartGame}
+                    style={{
+                        backgroundColor: colors.buttonBackground,
+                        color: colors.buttonTextRun,
+                        padding: '10px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontSize: '20px',
+                        marginTop: '15px',
+                        border: 'none',
+                    }}
+                >
+                    Start Game
+                </button>
+            )}
         </div>
     );
 };

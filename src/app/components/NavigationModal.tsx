@@ -9,38 +9,29 @@ interface NavigationModalProps {
 
 const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose }) => {
     const [showSettings, setShowSettings] = useState(false);  // State to toggle settings view
-
     const themeContext = useContext(ThemeContext);
 
-    // Safety check to ensure ThemeContext is defined
     if (!themeContext) {
         throw new Error('ThemeContext is undefined. Ensure that ThemeProvider is wrapping the component.');
     }
 
     const { colors } = themeContext;
 
-    // Add an event listener for the Escape key to close the modal
     useEffect(() => {
-        // Only add the event listener when the modal is visible
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();  // Exit navigation modal
+            }
+        };
+
         if (isVisible) {
-            const handleKeyDown = (event: KeyboardEvent) => {
-                if (event.key === 'Escape') {
-                    if (showSettings) {
-                        setShowSettings(false);  // Close settings if they are open
-                    } else {
-                        onClose();  // Close the modal if settings are not open
-                    }
-                }
-            };
-
             document.addEventListener('keydown', handleKeyDown);
-
-            // Cleanup the event listener when the component is unmounted or when the modal is no longer visible
-            return () => {
-                document.removeEventListener('keydown', handleKeyDown);
-            };
         }
-    }, [isVisible, showSettings, onClose]);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isVisible, onClose]);
 
     if (!isVisible) return null;  // Don't render the modal if it's not visible
 
@@ -65,7 +56,6 @@ const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose })
                 color: colors.text,  // Use text color from theme
                 fontFamily: 'JetBrains Mono, monospace',
             }}>
-                {/* Render the Settings Component if showSettings is true */}
                 {showSettings ? (
                     <>
                         <Settings />

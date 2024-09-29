@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import Navbar from './Navbar';
-import ProblemDescription from './ProblemDescription'; // Make sure this is the correct path
+import ProblemDescription from './ProblemDescription';
 import CodeEditor from './CodeEditor';
 import CodeOutput from './CodeOutput';
 import Modal from './Modals';
 import { ApolloProvider } from '@apollo/client';
 import client from '../lib/apolloClient';
 import { runCode } from '../utils/codeUtils';
-import { useWebSocket } from '../hooks/useWebSocket';
 import { usePyodide } from '../hooks/usePyodide';
 import NavigationModal from './NavigationModal';
 import PowerUpsBar from './PowerUpsBar';
+import WrappedMultipleQuestionRetriever from './WrappedMultipleQuestionRetriever';  // Import the retriever
 import { ThemeContext } from '../../context/ThemeContext';  // Import ThemeContext
 
 interface Question {
@@ -27,15 +27,14 @@ interface Question {
 
 const Home: React.FC = () => {
     const [output, setOutput] = useState<string>("");
-    const [language, setLanguage] = useState<"python" | "javascript">("python");
+    const [language, setLanguage] = useState<'python' | 'javascript' | 'C++'>('python');
     const [showDropdown, setShowDropdown] = useState(false);
-    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null); // Ensure this type matches the Question interface
-    const [isLoading, setIsLoading] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [validatorOutput, setValidatorOutput] = useState<string>("");
     const [isValidating, setIsValidating] = useState(false);
     const [showHostModal, setShowHostModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
-    const [roomInput, setRoomInput] = useState<string>("");
+    const [gameStarted, setGameStarted] = useState(false);
     const [exampleOutputs, setExampleOutputs] = useState<{
         name: string;
         userOutput: string;
@@ -43,101 +42,75 @@ const Home: React.FC = () => {
         isCorrect: boolean;
     }[]>([]);
     const [activeTab, setActiveTab] = useState(0);
+    const [connectedPlayers, setConnectedPlayers] = useState<boolean[]>([false, false]);
     const [mode, setMode] = useState<"multiplayer" | "single">("multiplayer");
     const [isConnected, setIsConnected] = useState(false);
-    const [roomCode, setRoomCode] = useState<string>("");
-    const [playerCount, setPlayerCount] = useState<number>(1);
-    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-    const [currentProblemIndex, setCurrentProblemIndex] = useState<number>(0);  // Index for the current problem
-    const [problemSet, setProblemSet] = useState<Question[]>([]);  // Store a set of problems
+    const [currentProblemIndex, setCurrentProblemIndex] = useState<number>(0);
+    const [problemSet, setProblemSet] = useState<Question[]>([]);
+    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);  // Initially null, then true/false based on validation
+
 
     const themeContext = useContext(ThemeContext);
 
-    // Safety check to ensure ThemeContext is defined
+
     if (!themeContext) {
-        throw new Error('ThemeContext is undefined. Ensure that ThemeProvider is wrapping the component.');
+        throw new Error('ThemeContext is undefined. Make sure you are using ThemeProvider to wrap the component.');
     }
+
 
     const { colors } = themeContext;
 
-    // Define isModalVisible state and its setter
-    const [isModalVisible, setIsModalVisible] = useState(false);
+    const pyodide = usePyodide();
 
-    const handleProblemFetched = (problem: Question | null) => {
-        if (problem) {
-            setCurrentQuestion(problem);  // Update the current question
+    const handleProblemFetched = (questions: Question | Question[] | null) => {
+        if (questions) {
+            if (Array.isArray(questions) && questions.length > 0) {
+                if (mode === "multiplayer") {
+                    setProblemSet(questions);  // Set the entire problem set in multiplayer
+                    const firstQuestion = questions[0];
+                    setCurrentProblemIndex(0);  // Reset the problem index
+                    setCurrentQuestion(firstQuestion);  // Set the first question as current
+                }
+            } else if (mode === "single" && questions) {
+                setCurrentQuestion(questions as Question);  // Handle a single question
+            }
+        } else {
+            console.error("No questions found or questions is undefined.");
         }
     };
-
-    const pyodide = usePyodide(language);
-    const ws = useWebSocket(mode, setRoomCode, setPlayerCount);
 
     const moveToNextProblem = useCallback(() => {
-        if (currentProblemIndex < problemSet.length - 1) {
-            const nextIndex = currentProblemIndex + 1;
-            setCurrentProblemIndex(nextIndex);  // Update to the next problem
-        } else {
-            console.log("No more problems in the set.");
-        }
-    }, [currentProblemIndex, problemSet]);
+        setCurrentProblemIndex((prevIndex) => prevIndex + 1);
+    }, []);
 
-    // state to control modal visibility
-    const [code, setCode] = useState<string>("# Write your Python code here...");
-
-    // When two players are connected, retrieve a question
-    useEffect(() => {
-        if (playerCount === 2 && problemSet.length === 0) {
-            console.log("Fetching problems because both players are connected...");
-            // Fetch problems logic here
-        }
-    }, [playerCount, problemSet.length]);
-
-    useEffect(() => {
-        setIsConnected(playerCount === 2);
-    }, [playerCount]);
-
-    const createRoom = () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            const code = Math.random().toString(36).substr(2, 5);
-            ws.send(JSON.stringify({ type: "createRoom", roomCode: code }));
+    const handleCheckCode = (evaluationResults: any[]) => {
+        setExampleOutputs(evaluationResults);
+        const allCorrect = evaluationResults.every((result) => result.isCorrect);
+        setIsCorrect(allCorrect);  // Update the `isCorrect` state based on validation result
+        if (allCorrect) {
+            moveToNextProblem();
         }
     };
 
-    const joinRoom = (code: string) => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "joinRoom", roomCode: code }));
+    useEffect(() => {
+        if (problemSet.length > 0 && !currentQuestion) {
+            setCurrentQuestion(problemSet[0]);  // Set the first problem if not set
         }
-    };
+    }, [problemSet]);
 
     const handleRunCode = async () => {
         await runCode(language, code, pyodide, currentQuestion, setOutput, setExampleOutputs, setActiveTab);
     };
 
-    // Handle the checkCode functionality when submitting code to GPT
-    const handleCheckCode = (evaluationResults: any[]) => {
-        console.log('Check code result:', evaluationResults);
-
-        // Check if all test cases are correct
-        const allCorrect = evaluationResults.every(result => result.isCorrect === true);
-
-        // Update the UI with evaluation results (for displaying in the output section)
-        setExampleOutputs(evaluationResults);
-
-        // If all examples are correct, move to the next problem
-        if (allCorrect) {
-            moveToNextProblem();  // Ensure this function is properly defined to move to the next question
-        }
-    };
+    const [code, setCode] = useState<string>("# Write your Python code here...");
 
     // Global Event Listener for Escape Key
     useEffect(() => {
         const handleKeydown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 // Toggle the modal visibility
-                setIsModalVisible(prev => !prev);
             }
         };
-
         window.addEventListener('keydown', handleKeydown);
         return () => {
             window.removeEventListener('keydown', handleKeydown);
@@ -147,9 +120,8 @@ const Home: React.FC = () => {
     return (
         <ApolloProvider client={client}>
             <div style={{ fontFamily: "JetBrains Mono", color: colors.text, backgroundColor: colors.background, minHeight: "100vh" }}>
-                {/* Add your logo here */}
                 <div style={{ fontSize: "2em", display: "flex", justifyContent: "center", padding: "20px" }}>
-                    coderacer.io
+                    coderace.io
                 </div>
 
                 <div style={{ width: "80%", margin: "0 auto" }}>
@@ -164,64 +136,66 @@ const Home: React.FC = () => {
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <ProblemDescription
                             mode={mode}
-                            isConnected={isConnected}
-                            ws={ws}
-                            roomCode={roomCode}
-                            playerCount={playerCount}
-                            onStartMatch={() => console.log("Match started!")}
-                            validatorOutput=""
-                            isCorrect={null}
-                            onProblemFetched={handleProblemFetched}  // Pass the current problem to this handler
+                            isConnected={true}
+                            ws={null}
+                            roomCode="test"
+                            playerCount={1}
+                            onStartMatch={() => setGameStarted(true)}  // Start game when clicked
+                            validatorOutput={validatorOutput}
+                            isCorrect={isCorrect}  // Pass the state here
+                            onProblemFetched={handleProblemFetched}
+                            moveToNextProblem={moveToNextProblem}
+                            currentProblemIndex={currentProblemIndex}
+                            setStartTimer={() => { }}  // Implement timer functionality if needed
+                            gameStarted={gameStarted}
                         />
 
-                        <div style={{ padding: "0 10px" }}>  {/* Ensure a bit of padding for breathing room */}
-                            <PowerUpsBar />
-                        </div>
+                        {/* PlayerConnectionStatus handles all WebSocket connection logic */}
+
+                        {mode === "multiplayer" && (
+                            <div style={{ padding: "0 10px" }}>
+                                <PowerUpsBar />
+                            </div>
+                        )}
 
                         <CodeEditor
                             code={code}
                             setCode={setCode}
-                            runCode={setValidatorOutput}
-                            checkCode={handleCheckCode}
+                            runCode={handleRunCode}  // This is the function handling the code execution
+                            checkCode={handleCheckCode}  // This checks whether the code output is correct
                             language={language}
                             setLanguage={setLanguage}
-                            isLoading={isLoading}
-                            currentProblem={currentQuestion}  // Use dynamic current question
-                            setStartTimer={() => { }}
-                            pyodide={pyodide}  // Make sure to pass the pyodide instance
+                            currentProblem={currentQuestion}  // Pass the current problem here
+                            pyodide={pyodide}
+                            moveToNextProblem={moveToNextProblem}  // Move to the next problem when correct
+                            gameStarted={gameStarted}
                         />
                     </div>
 
                     <CodeOutput
-                        exampleOutputs={exampleOutputs}  // Correctly pass the example outputs
+                        exampleOutputs={exampleOutputs}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         validatorOutput={validatorOutput}
                         isValidating={isValidating}
-                        isCorrect={isCorrect}
                     />
+                    {output}
                 </div>
 
                 <Modal
                     show={showHostModal}
-                    handleClose={() => setShowHostModal(false)}
-                    createRoom={createRoom}
-                    roomCode={roomCode}
-                    isConnected={isConnected}
+                    handleClose={() => console.log('Close modal')}
                     isHostModal={true}
+                    setConnectedPlayers={setConnectedPlayers}
                 />
                 <Modal
                     show={showJoinModal}
-                    handleClose={() => setShowJoinModal(false)}
-                    joinRoom={joinRoom}
-                    setRoomCode={setRoomInput}
-                    roomInput={roomInput}
-                    isConnected={isConnected}
+                    handleClose={() => console.log('Close modal')}
                     isHostModal={false}
+                    setConnectedPlayers={setConnectedPlayers}
                 />
 
-                {/* Navigation modal triggered by Escape key */}
-                <NavigationModal isVisible={isModalVisible} onClose={() => setIsModalVisible(false)} />
+                <NavigationModal isVisible={false} onClose={() => { }} />
             </div>
         </ApolloProvider>
     );

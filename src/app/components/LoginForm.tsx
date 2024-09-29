@@ -61,7 +61,7 @@ const LoginForm: React.FC = () => {
         <div className="flex items-center justify-center h-screen bg-black text-white">
             <div className="bg-black p-6 rounded-lg shadow-md w-full max-w-sm border border-gray-700">
                 <h1 className="text-2xl font-bold text-center mb-6 flex items-center justify-center">
-                    <span className="mr-2"></span> {isSignUp ? "Sign Up" : "Login"}
+                    <span className="mr-2"></span> {isSignUp ? "sign up" : "login"}
                 </h1>
 
                 {/* OAuth Login Options */}
@@ -79,7 +79,7 @@ const LoginForm: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Username"
-                                className={`w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? "border-red-500" : "focus:ring-blue-500"
+                                className={`w-full p-3 hover:placeholder-gray-500 hover:bg-gray-900 duration-300 ease-in-out rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? "border-red-500" : "focus:ring-blue-500"
                                     }`}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
@@ -92,7 +92,7 @@ const LoginForm: React.FC = () => {
                     <input
                         type="email"
                         placeholder="Email"
-                        className={`w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.email ? "border-red-500" : "focus:ring-blue-500"
+                        className={`w-full p-3 hover:placeholder-gray-500 hover:bg-gray-900 duration-300 ease-in-out rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.email ? "border-red-500" : "focus:ring-blue-500"
                             }`}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -103,7 +103,7 @@ const LoginForm: React.FC = () => {
                     <input
                         type="password"
                         placeholder="Password"
-                        className={`w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? "border-red-500" : "focus:ring-blue-500"
+                        className={`w-full p-3 hover:placeholder-gray-500 hover:bg-gray-900 duration-300 ease-in-out rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? "border-red-500" : "focus:ring-blue-500"
                             }`}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -116,7 +116,7 @@ const LoginForm: React.FC = () => {
                             <input
                                 type="password"
                                 placeholder="Confirm Password"
-                                className={`w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.confirmPassword ? "border-red-500" : "focus:ring-blue-500"
+                                className={`w-full p-3 hover:placeholder-gray-500 hover:bg-gray-900 duration-300 ease-in-out rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${fieldErrors.confirmPassword ? "border-red-500" : "focus:ring-blue-500"
                                     }`}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -141,11 +141,11 @@ const LoginForm: React.FC = () => {
                         <label className="inline-flex items-center">
                             <input
                                 type="checkbox"
-                                className="form-checkbox bg-white text-black rounded"
+                                className="form-checkbox bg-white text-black rounded mt-[4px]"
                                 checked={rememberMe}
                                 onChange={() => setRememberMe(!rememberMe)}
                             />
-                            <span className="ml-2 text-gray-400">remember me</span>
+                            <span className="ml-2 text-gray-400 relative cursor-pointer after:block after:w-0 after:h-[1px] after:bg-current after:transition-all after:duration-300 after:ease-in-out after:mt-[-5px] hover:after:w-full">remember me</span>
                         </label>
                     </div>
                 )}
@@ -153,7 +153,7 @@ const LoginForm: React.FC = () => {
                 <div className="flex justify-center mt-4">
                     <button
                         onClick={isSignUp ? handleSignUpSubmit : handleSignInSubmit}
-                        className="bg-white text-black py-2 px-6 rounded-lg flex items-center"
+                        className="bg-white text-black py-2 px-6 rounded-lg flex items-center hover:bg-gray-200"
                     >
                         <span className="mr-2"></span> {isSignUp ? "Sign Up" : "Sign In"}
                     </button>
@@ -163,7 +163,7 @@ const LoginForm: React.FC = () => {
                 <div className="flex justify-between text-sm text-gray-400 mt-4">
                     <button
                         onClick={() => setIsSignUp(!isSignUp)}
-                        className="hover:underline"
+                        className="ml-2 text-gray-400 relative after:block after:w-0 after:h-[1px] after:bg-current after:transition-all after:duration-300 after:ease-in-out after:mt-[-2px] hover:after:w-full"
                     >
                         {isSignUp
                             ? "Already have an account? Sign In"

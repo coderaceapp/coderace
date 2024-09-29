@@ -2,6 +2,7 @@ import express from 'express';
 import { graphqlHTTP } from 'express-graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { typeDefs } from './schema/typeDefs';
+import { leaderboardsResolver } from './resolvers/leaderboardsResolver';
 import { questionResolver } from './resolvers/questionResolver';
 import http from 'http';
 const cors = require('cors');
@@ -11,10 +12,18 @@ const app = express();
 
 app.use(cors({ origin: 'http://localhost:3000' }));
 
+// Merge the resolvers
+const resolvers = {
+    Query: {
+        ...leaderboardsResolver.Query,
+        ...questionResolver.Query,
+    },
+};
+
 // Create GraphQL schema
 const schema = makeExecutableSchema({
     typeDefs,
-    resolvers: questionResolver,
+    resolvers: resolvers as any,
 });
 
 // Set up GraphQL middleware

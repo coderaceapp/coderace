@@ -6,7 +6,8 @@ interface ThemeColors {
     buttonBackground: string;
     buttonTextRun: string;
     buttonTextSubmit: string;
-    header: string;  // New property for header color
+    header: string;
+    cardBackground: string;
     powerUpModal: {
         background: string;
         text: string;
@@ -19,13 +20,15 @@ interface ThemeColors {
     };
 }
 
+// Define three themes: light, dark, and ludicrous
 const lightTheme: ThemeColors = {
     background: '#f9f9f9',
     text: '#333',
     buttonBackground: '#e0e0e0',
-    buttonTextRun: '#FFDD00',
-    buttonTextSubmit: '#00FF00',
+    buttonTextRun: '#d4af00', // Darker yellow for better contrast (changed from #FFDD00)
+    buttonTextSubmit: '#006400', // Darker green for better contrast (changed from #00FF00)
     header: '#000',
+    cardBackground: '#ffffff',
     powerUpModal: {
         background: '#ffffff',
         text: '#333333',
@@ -33,7 +36,7 @@ const lightTheme: ThemeColors = {
         buttonText: '#333333',
         closeButton: '#ff5555',
         closeButtonHover: '#ff8888',
-        titleGradientStart: '#ffdd00',
+        titleGradientStart: '#d4af00', // Updated gradient start to match darker yellow
         titleGradientEnd: '#ff007f',
     },
 };
@@ -45,6 +48,7 @@ const darkTheme: ThemeColors = {
     buttonTextRun: '#FFDD00',
     buttonTextSubmit: '#00FF00',
     header: '#ffffff',
+    cardBackground: '#1e1e1e',
     powerUpModal: {
         background: '#1e1e1e',
         text: '#ffffff',
@@ -57,10 +61,30 @@ const darkTheme: ThemeColors = {
     },
 };
 
+const ludicrousTheme: ThemeColors = {
+    background: '#ff00ff',
+    text: '#00ffff',
+    buttonBackground: '#ffff00',
+    buttonTextRun: '#ff0000',
+    buttonTextSubmit: '#0000ff',
+    header: '#ff7f00',
+    cardBackground: '#00ff7f',
+    powerUpModal: {
+        background: '#ff0ff0',
+        text: '#7ff000',
+        buttonBackground: '#00ff00',
+        buttonText: '#ff0000',
+        closeButton: '#00ff00',
+        closeButtonHover: '#ff00ff',
+        titleGradientStart: '#00ffff',
+        titleGradientEnd: '#ff0000',
+    },
+};
+
 interface ThemeContextProps {
-    theme: 'light' | 'dark';
+    theme: 'light' | 'dark' | 'ludicrous';
     colors: ThemeColors;
-    toggleTheme: () => void;
+    setTheme: (newTheme: 'light' | 'dark' | 'ludicrous') => void;
 }
 
 interface ThemeProviderProps {
@@ -70,30 +94,36 @@ interface ThemeProviderProps {
 export const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [theme, setTheme] = useState<'light' | 'dark' | 'ludicrous'>(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'ludicrous';
+        return savedTheme || 'light';
+    });
+
     const [colors, setColors] = useState<ThemeColors>(lightTheme);
 
-    // Toggle between light and dark themes
-    const toggleTheme = () => {
-        if (theme === 'light') {
-            setTheme('dark');
-            setColors(darkTheme);
-        } else {
-            setTheme('light');
-            setColors(lightTheme);
+    useEffect(() => {
+        localStorage.setItem('theme', theme);
+        switch (theme) {
+            case 'light':
+                setColors(lightTheme);
+                break;
+            case 'dark':
+                setColors(darkTheme);
+                break;
+            case 'ludicrous':
+                setColors(ludicrousTheme);
+                break;
+            default:
+                setColors(lightTheme);
         }
+    }, [theme]);
+
+    const handleSetTheme = (newTheme: 'light' | 'dark' | 'ludicrous') => {
+        setTheme(newTheme);
     };
 
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-        if (savedTheme) {
-            setTheme(savedTheme);
-            setColors(savedTheme === 'light' ? lightTheme : darkTheme);
-        }
-    }, []);
-
     return (
-        <ThemeContext.Provider value={{ theme, colors, toggleTheme }}>
+        <ThemeContext.Provider value={{ theme, colors, setTheme: handleSetTheme }}>
             {children}
         </ThemeContext.Provider>
     );

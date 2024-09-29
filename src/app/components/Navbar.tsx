@@ -1,44 +1,56 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faGamepad, faUserFriends } from "@fortawesome/free-solid-svg-icons";
-import Link from 'next/link';
 import UserMenu from "./UserMenu";
 import { ThemeContext } from '../../context/ThemeContext';
+import PlayerStatus from './PlayerStatus';
 
 interface NavbarProps {
     setShowJoinModal: (value: boolean) => void;
     setShowHostModal: (value: boolean) => void;
     mode: string;
     setMode: (mode: "single" | "multiplayer") => void;
-    showDropdown: boolean;
-    setShowDropdown: (value: boolean) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mode, setMode, showDropdown, setShowDropdown }) => {
-
+const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mode, setMode }) => {
+    const [connectedPlayers, setConnectedPlayers] = useState<boolean[]>([false, false]);
     const themeContext = useContext(ThemeContext);
 
     if (!themeContext) {
         throw new Error('ThemeContext is undefined. Ensure that ThemeProvider is wrapping the component.');
     }
 
-    const { theme, colors } = themeContext;
+    const { colors } = themeContext;
 
-    const handleMouseOver = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.borderColor = "#007BFF";
-    };
+    useEffect(() => {
+        const ws = new WebSocket('ws://localhost:8080');
 
-    const handleMouseOut = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.borderColor = "transparent";
-    };
+        ws.onopen = () => {
+            console.log("WebSocket connection established");
+        };
 
-    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.transform = "translateY(2px)";
-    };
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
 
-    const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.transform = "translateY(0px)";
-    };
+            if (data.type === 'playerJoined') {
+                const updatedPlayers = [...connectedPlayers];
+                updatedPlayers[data.playerIndex] = true;
+                setConnectedPlayers(updatedPlayers);
+            }
+
+            if (data.type === 'roomCreated') {
+                console.log("Room created:", data.roomCode);
+            }
+
+            if (data.type === 'joinedRoom') {
+                console.log("Joined room:", data.roomCode);
+            }
+        };
+
+        return () => {
+            ws.close();
+        };
+    }, [connectedPlayers]);
 
     return (
         <nav
@@ -47,120 +59,90 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
                 justifyContent: "space-between",
                 alignItems: "center",
                 backgroundColor: colors.background,
-                padding: "5px 10px",
-                borderRadius: "15px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                margin: "20px auto",
-                color: colors.text  // Ensure text color is applied from theme
+                padding: "5px 15px",
+                borderRadius: "10px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                margin: "10px auto",
+                height: "60px",
+                color: colors.text,
+                maxWidth: "1200px",
             }}
         >
-            <div style={{ display: "flex", gap: "15px" }}>
-                {/* Link to Rankings Page */}
-                <Link href="/rankings" passHref>
-                    <button
-                        style={{ ...buttonStyles, color: colors.text, backgroundColor: colors.buttonBackground }}
-                        onMouseOver={handleMouseOver}
-                        onMouseOut={handleMouseOut}
-                        onMouseDown={handleMouseDown}
-                        onMouseUp={handleMouseUp}
-                    >
-                        <FontAwesomeIcon icon={faTrophy} /> Rankings
-                    </button>
-                </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <button
-                    onClick={() => setShowJoinModal(true)}  // Show join game modal
                     style={{ ...buttonStyles, color: colors.text, backgroundColor: colors.buttonBackground }}
-                    onMouseOver={handleMouseOver}
-                    onMouseOut={handleMouseOut}
+                    onClick={() => window.location.href = '/rankings'}
+                >
+                    <FontAwesomeIcon icon={faTrophy} /> Rankings
+                </button>
+                <button
+                    onClick={() => setShowJoinModal(true)}
+                    style={{ ...buttonStyles, color: colors.text, backgroundColor: colors.buttonBackground }}
                 >
                     <FontAwesomeIcon icon={faGamepad} /> Join a Game
                 </button>
                 <button
-                    onClick={() => setShowHostModal(true)}  // Show host game modal
+                    onClick={() => setShowHostModal(true)}
                     style={{ ...buttonStyles, color: colors.text, backgroundColor: colors.buttonBackground }}
-                    onMouseOver={handleMouseOver}
-                    onMouseOut={handleMouseOut}
                 >
                     <FontAwesomeIcon icon={faUserFriends} /> Host a Game
                 </button>
 
-                {/* Dropdown for Single/Multiplayer */}
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <button
-                        className="dropbtn"
-                        onClick={() => setShowDropdown(!showDropdown)}
-                        style={{
-                            ...buttonStyles,
-                            padding: "10px 15px",
-                            width: "170px",
-                            backgroundColor: colors.buttonBackground,
-                            color: colors.text,
-                        }}
-                        onMouseOver={handleMouseOver}
-                        onMouseOut={handleMouseOut}
-                        onMouseDown={handleMouseDown}
-                        onMouseUp={handleMouseUp}
-                    >
-                        {mode === "single" ? "Single Player" : "Multiplayer"}
-                    </button>
+                <div style={{ marginLeft: 'auto', marginRight: '10px' }}>
+                    <PlayerStatus connectedPlayers={connectedPlayers} />
+                </div>
+            </div>
 
-                    {showDropdown && (
-                        <ul
-                            style={{
-                                listStyle: "none",
-                                padding: 0,
-                                margin: 0,
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                backgroundColor: colors.buttonBackground,
-                                color: colors.text,
-                                boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
-                                zIndex: 1,
-                                borderRadius: "5px",
-                                overflow: "hidden",
-                                minWidth: "170px",
-                            }}
-                        >
-                            <li>
-                                <button
-                                    onClick={() => {
-                                        setMode("single");
-                                        setShowDropdown(false);
-                                    }}
-                                    style={{
-                                        width: "100%",
-                                        textAlign: "left",
-                                        padding: "12px 16px",
-                                        borderBottom: `1px solid ${colors.text}`,
-                                        backgroundColor: colors.buttonBackground,
-                                        color: colors.text,
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    Single Player
-                                </button>
-                            </li>
-                            <li>
-                                <button
-                                    onClick={() => {
-                                        setMode("multiplayer");
-                                        setShowDropdown(false);
-                                    }}
-                                    style={{
-                                        width: "100%",
-                                        textAlign: "left",
-                                        padding: "12px 16px",
-                                        backgroundColor: colors.buttonBackground,
-                                        color: colors.text,
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    Multiplayer
-                                </button>
-                            </li>
-                        </ul>
-                    )}
+            <div
+                style={{
+                    position: "relative",
+                    width: "188px",
+                    height: "36px",
+                    backgroundColor: colors.buttonBackground,
+                    borderRadius: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0 5px",
+                    cursor: "pointer",
+                }}
+                onClick={() => setMode(mode === "single" ? "multiplayer" : "single")}
+            >
+                <div
+                    style={{
+                        position: "absolute",
+                        top: "3px",
+                        left: mode === "single" ? "3px" : "calc(100% - 93px)",
+                        width: "88px",
+                        height: "30px",
+                        backgroundColor: colors.cardBackground,
+                        borderRadius: "15px",
+                        transition: "left 0.3s ease",
+                        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)",
+                        zIndex: 1,
+                    }}
+                />
+                <div
+                    style={{
+                        width: "50%",
+                        textAlign: "center",
+                        color: mode === "single" ? colors.text : "#888",
+                        zIndex: 2,
+                        fontSize: "14px",
+                    }}
+                >
+                    Single
+                </div>
+                <div
+                    style={{
+                        width: "50%",
+                        textAlign: "center",
+                        color: mode === "multiplayer" ? colors.text : "#888",
+                        zIndex: 2,
+                        fontSize: "14px",
+                    }}
+                >
+                    Multi
                 </div>
             </div>
 
@@ -171,13 +153,13 @@ const Navbar: React.FC<NavbarProps> = ({ setShowJoinModal, setShowHostModal, mod
 
 const buttonStyles = {
     color: "#aaaaaa",
-    fontSize: "14px",
+    fontSize: "12px",
     cursor: "pointer",
     background: "none",
     outline: "none",
-    padding: "10px",
-    height: "50px",
-    width: "150px",
+    padding: "8px",
+    height: "40px",
+    width: "110px",
     boxSizing: "border-box" as const,
     transition: "border-color 0.3s ease",
     border: "2px solid transparent",

@@ -20,8 +20,8 @@ let questionsData: Question[] = [];
 try {
     const fileContents = fs.readFileSync(filePath, 'utf8');
     questionsData = JSON.parse(fileContents).questions as Question[];
-} catch (error) {
-    // console.error(`Error reading or parsing questions JSON file: ${error.message}`);
+} catch (error: any) {
+    console.error(`Error reading or parsing questions JSON file: ${error.message}`);
 }
 
 export const questionResolver: IResolvers = {

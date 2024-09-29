@@ -32,7 +32,9 @@ const HomeButton = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
             </span>
-            <span className={`relative w-full text-right transition-colors duration-300 ease-in-out group-hover:text-black ${isClicked ? 'text-black' : ''}`}>coderace.io</span>
+            <span className={`relative w-full text-right transition-all duration-300 ease-in-out group-hover:text-black ${isClicked ? 'opacity-0' : 'opacity-100'}`}>
+                coderace.io
+            </span>
         </a>
     );
 };

@@ -6,10 +6,13 @@ interface ModalProps {
     show: boolean;
     handleClose: () => void;
     children: React.ReactNode;
+
 }
 
 const PowerUpModal: React.FC<ModalProps> = ({ show, handleClose, children }) => {
     if (!show) return null;
+
+
 
     const themeContext = useContext(ThemeContext);
 

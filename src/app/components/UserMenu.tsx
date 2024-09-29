@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "../lib/firebaseConfig";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { ThemeContext } from '../../context/ThemeContext';  // Import the ThemeContext
+import Settings from './Settings';  // Import Settings
 
 interface UserMenuProps {
     buttonStyles: React.CSSProperties;  // Accept buttonStyles prop
@@ -14,8 +16,18 @@ const UserMenu: React.FC<UserMenuProps> = ({ buttonStyles }) => {
     const [username, setUsername] = useState<string | null>(null);
     const [uid, setUid] = useState<string | null>(null);
     const [showDropdown, setShowDropdown] = useState(false);
-    const router = useRouter();
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const [showSettings, setShowSettings] = useState(false);  // State to toggle settings view
+
+    const themeContext = useContext(ThemeContext);  // Access the theme context
+
+    if (!themeContext) {
+        console.error('ThemeContext is unavailable!');
+        return null;
+    }
+
+    const { colors, theme } = themeContext;  // Destructure colors and theme
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -56,7 +68,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ buttonStyles }) => {
             await signOut(auth);
             setUsername(null);
             setUid(null);
-            router.push("/login");
+            window.location.href = "/login"; // Force reload to apply theme changes
         } catch (error: any) {
             console.error("Error logging out: ", error.message);
         }
@@ -73,13 +85,18 @@ const UserMenu: React.FC<UserMenuProps> = ({ buttonStyles }) => {
                         aria-expanded="true"
                         aria-haspopup="true"
                         onClick={() => setShowDropdown((prev) => !prev)}
-                        style={buttonStyles}  // Apply custom styles here
+                        style={{
+                            ...buttonStyles,
+                            backgroundColor: colors.buttonBackground,  // Apply dynamic button background
+                            color: colors.text,  // Apply dynamic text color
+                        }}  // Apply custom styles here
                     >
                         {username}
                         <svg
                             className="-mr-1 h-5 w-5 text-gray-400"
                             viewBox="0 0 20 20"
                             fill="currentColor"
+                            style={{ color: colors.text }}  // Apply dynamic color to icon
                             aria-hidden="true"
                         >
                             <path
@@ -96,34 +113,85 @@ const UserMenu: React.FC<UserMenuProps> = ({ buttonStyles }) => {
                             role="menu"
                             aria-orientation="vertical"
                             aria-labelledby="menu-button"
+                            style={{
+                                backgroundColor: colors.background,  // Apply dynamic dropdown background
+                                color: colors.text,  // Apply dynamic dropdown text color
+                            }}
                         >
                             <div className="py-1" role="none">
                                 <button
                                     className="block w-full px-4 py-2 text-left text-sm text-gray-700"
                                     role="menuitem"
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: colors.text,
+                                    }}
                                     onClick={() => {
                                         if (uid) {
-                                            router.push(`/profile?uid=${uid}`);
+                                            // Trigger a full page reload to the profile page
+                                            window.location.href = `/profile?uid=${uid}`;
                                         }
                                     }}
                                 >
                                     Profile
                                 </button>
                                 <button
-                                    className="block w-full px-4 py-2 text-left text-sm text-gray-700"
-                                    role="menuitem"
-                                    onClick={() => {
-                                        console.log("Settings Clicked");
-                                    }}
+                                    className="block w-full px-4 py-2 text-left text-sm"
+                                    style={{ backgroundColor: 'transparent', color: colors.text }}
+                                    onClick={() => setShowSettings(true)}  // Toggle settings view
                                 >
                                     Settings
                                 </button>
                                 <button
                                     className="block w-full px-4 py-2 text-left text-sm text-gray-700"
                                     role="menuitem"
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: colors.text,
+                                    }}
                                     onClick={handleLogout}
                                 >
                                     Logout
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {showSettings && (
+                        <div style={{
+                            position: 'fixed',
+                            top: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            zIndex: 1000,
+                        }}>
+                            <div style={{
+                                backgroundColor: colors.background,
+                                color: colors.text,
+                                padding: '20px',
+                                borderRadius: '10px',
+                                maxWidth: '400px',
+                                width: '100%',
+                            }}>
+                                <Settings />  {/* Render Settings component */}
+                                <button
+                                    style={{
+                                        marginTop: '20px',
+                                        padding: '10px 20px',
+                                        backgroundColor: colors.buttonBackground,
+                                        color: colors.text,
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'pointer',
+                                    }}
+                                    onClick={() => setShowSettings(false)}  // Close settings modal
+                                >
+                                    Close Settings
                                 </button>
                             </div>
                         </div>
@@ -132,8 +200,12 @@ const UserMenu: React.FC<UserMenuProps> = ({ buttonStyles }) => {
             ) : (
                 <button
                     className="inline-flex justify-center w-full rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                    onClick={() => router.push("/login")}
-                    style={buttonStyles}  // Apply custom styles here as well
+                    onClick={() => window.location.href = "/login"}  // Full reload for login
+                    style={{
+                        ...buttonStyles,
+                        backgroundColor: colors.buttonBackground,  // Dynamic theme color
+                        color: colors.text,  // Dynamic text color
+                    }}  // Apply custom styles here as well
                 >
                     Login
                 </button>

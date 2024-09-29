@@ -1,4 +1,10 @@
 export const typeDefs = `
+type LeaderboardEntry {
+  userId: String!
+  username: String!
+  elo: Int!
+}
+
 type Question {
   id: ID!
   difficulty: String!
@@ -12,5 +18,9 @@ type Question {
 type Query {
   # Query to fetch questions by difficulty
   questions(difficulty: String!): [Question!]!
+
+  # Leaderboard queries
+  mainLeaderboard: [LeaderboardEntry!]!
+  questionLeaderboard(questionId: String!): [LeaderboardEntry!]!
 }
 `;

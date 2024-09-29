@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ThemeContext } from '../../context/ThemeContext'; // Import ThemeContext
+import { eventBus } from '../utils/EventBus'; // Import the event bus
 
 interface CodeOutputProps {
     exampleOutputs: {
@@ -24,7 +25,6 @@ const CodeOutput: React.FC<CodeOutputProps> = ({
     isValidating,
     isCorrect
 }) => {
-
     const themeContext = useContext(ThemeContext);
 
     // Safety check to ensure ThemeContext is defined
@@ -33,6 +33,23 @@ const CodeOutput: React.FC<CodeOutputProps> = ({
     }
 
     const { colors } = themeContext;
+
+    // State to hold the output from the event bus
+    const [outputMessage, setOutputMessage] = useState<string>('');
+
+    // Set up event listener for the "output" event
+    useEffect(() => {
+        const handleOutputEvent = (data: { message: string }) => {
+            setOutputMessage(data.message);
+        };
+
+        eventBus.on("output", handleOutputEvent);
+
+        // Clean up the event listener when the component unmounts
+        return () => {
+            eventBus.off("output", handleOutputEvent);
+        };
+    }, []);
 
     return (
         <div
@@ -93,14 +110,14 @@ const CodeOutput: React.FC<CodeOutputProps> = ({
                             overflowY: 'auto',
                         }}
                     >
-                        {/* <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
                             <strong>Your Output:</strong>
                         </div>
                         <pre>{exampleOutputs[activeTab].userOutput}</pre>
 
                         <div style={{ textAlign: 'center', margin: '20px 0' }}>
                             <strong>Expected Output:</strong>
-                        </div> */}
+                        </div>
                         <pre>{exampleOutputs[activeTab].expectedOutput}</pre>
 
                         <div style={{ textAlign: 'center', marginTop: '20px' }}>
@@ -124,7 +141,7 @@ const CodeOutput: React.FC<CodeOutputProps> = ({
             </div>
 
             {/* Validator Output Section */}
-            <div style={{ width: '48%' }}>
+            {/* <div style={{ width: '48%' }}>
                 <h4 style={{ fontSize: "1.25em", color: '#888888', marginBottom: '10px', textAlign: 'center' }}>
                     Validator Output
                 </h4>
@@ -151,6 +168,29 @@ const CodeOutput: React.FC<CodeOutputProps> = ({
                         <pre>{validatorOutput}</pre>
                     )}
                 </div>
+            </div> */}
+
+            {/* Output from Event Bus */}
+            <div style={{
+                width: '48%',  // Adjust the width to match the layout of other elements
+                marginTop: '20px',
+                padding: '10px 15px',  // Reduced padding for a compact appearance
+                backgroundColor: colors.background,
+                borderRadius: '10px',
+                color: colors.text,
+                minHeight: '120px',  // Adjust height to fit content properly
+                display: 'flex',  // Use flexbox for alignment
+                flexDirection: 'column',  // Stack the content vertically
+                justifyContent: 'center',  // Center the content
+            }}>
+                <strong>Real-time Output:</strong>
+                <pre style={{
+                    marginTop: '10px',  // Space between title and output
+                    whiteSpace: 'pre-wrap',  // Preserve formatting but wrap text
+                    overflowY: 'auto',  // Allow scrolling if content is long
+                    maxHeight: '80px',  // Limit the height to fit in the layout
+                    fontSize: '1em',  // Adjust font size for better readability
+                }}>{outputMessage || 'No output available.'}</pre>
             </div>
         </div>
     );

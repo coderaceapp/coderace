@@ -1,6 +1,10 @@
-// layout.tsx
+// src/app/layout.tsx
+
+"use client";
+
 import './globals.css';
 import React from "react";
+import { ThemeProvider } from '../context/ThemeContext';  // Import your ThemeProvider
 
 export default function RootLayout({
   children,
@@ -9,7 +13,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Wrap the application with ThemeProvider */}
+
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+
+      </body>
     </html>
   );
 }
