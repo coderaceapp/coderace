@@ -62,6 +62,27 @@ const Home: React.FC = () => {
 
     const pyodide = usePyodide();
 
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    // Toggle the modal visibility
+    const toggleModal = () => {
+        setIsModalVisible(prev => !prev);  // Toggle the modal state
+    };
+
+    // Open the modal when the Escape key is pressed
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsModalVisible(true);  // Open the modal
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
     const handleProblemFetched = (questions: Question | Question[] | null) => {
         if (questions) {
             if (Array.isArray(questions) && questions.length > 0) {
@@ -195,7 +216,13 @@ const Home: React.FC = () => {
                     setConnectedPlayers={setConnectedPlayers}
                 />
 
-                <NavigationModal isVisible={false} onClose={() => { }} />
+                <div>
+                    {/* Modal is triggered by Escape and closed by buttons inside the modal */}
+                    <NavigationModal
+                        isVisible={isModalVisible}
+                        onClose={() => setIsModalVisible(false)}  // Close the modal via buttons inside
+                    />
+                </div>
             </div>
         </ApolloProvider>
     );

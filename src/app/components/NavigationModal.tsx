@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useContext } from 'react';
 import Settings from './Settings';  // Ensure the path is correct
 import { ThemeContext } from '../../context/ThemeContext';  // Import ThemeContext
 
@@ -8,7 +8,6 @@ interface NavigationModalProps {
 }
 
 const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose }) => {
-    const [showSettings, setShowSettings] = useState(false);  // State to toggle settings view
     const themeContext = useContext(ThemeContext);
 
     if (!themeContext) {
@@ -16,22 +15,6 @@ const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose })
     }
 
     const { colors } = themeContext;
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onClose();  // Exit navigation modal
-            }
-        };
-
-        if (isVisible) {
-            document.addEventListener('keydown', handleKeyDown);
-        }
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isVisible, onClose]);
 
     if (!isVisible) return null;  // Don't render the modal if it's not visible
 
@@ -56,63 +39,27 @@ const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose })
                 color: colors.text,  // Use text color from theme
                 fontFamily: 'JetBrains Mono, monospace',
             }}>
-                {showSettings ? (
-                    <>
-                        <Settings />
+                <h2 style={{ color: colors.text }}>Navigation</h2>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                    <li>
                         <button
-                            onClick={() => setShowSettings(false)}  // Navigate back to the main menu
+                            onClick={() => onClose()}  // Close the modal via this button
                             style={{
-                                marginTop: '20px',
-                                padding: '10px 20px',
-                                backgroundColor: colors.buttonBackground,  // Use button background from theme
-                                color: colors.text,  // Use text color from theme
+                                backgroundColor: colors.buttonBackground,
+                                color: colors.text,
+                                padding: '10px',
+                                borderRadius: '5px',
                                 border: 'none',
-                                borderRadius: '10px',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Back to Menu
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <h2 style={{ color: colors.text }}>Navigation</h2>
-                        <ul style={{ listStyle: 'none', padding: 0 }}>
-                            <li>
-                                <button
-                                    onClick={() => setShowSettings(true)}  // Show settings
-                                    style={{
-                                        backgroundColor: colors.buttonBackground,  // Use button background from theme
-                                        color: colors.text,  // Use text color from theme
-                                        padding: '10px',
-                                        borderRadius: '5px',
-                                        border: 'none',
-                                        width: '100%',
-                                        marginBottom: '10px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    Settings
-                                </button>
-                            </li>
-                            {/* Add more navigation options here */}
-                        </ul>
-                        <button
-                            onClick={onClose}
-                            style={{
-                                marginTop: '20px',
-                                padding: '10px 20px',
-                                backgroundColor: colors.buttonBackground,  // Use button background from theme
-                                color: colors.text,  // Use text color from theme
-                                border: 'none',
-                                borderRadius: '10px',
+                                width: '100%',
+                                marginBottom: '10px',
                                 cursor: 'pointer',
                             }}
                         >
                             Close
                         </button>
-                    </>
-                )}
+                    </li>
+                    {/* Add more navigation options here */}
+                </ul>
             </div>
         </div>
     );
