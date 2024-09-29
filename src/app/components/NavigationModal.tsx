@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import Settings from './Settings';  // Ensure the path is correct
 import { ThemeContext } from '../../context/ThemeContext';  // Import ThemeContext
 
@@ -8,6 +8,7 @@ interface NavigationModalProps {
 }
 
 const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose }) => {
+    const [showSettings, setShowSettings] = useState(false);  // Toggle between navigation and settings
     const themeContext = useContext(ThemeContext);
 
     if (!themeContext) {
@@ -39,27 +40,64 @@ const NavigationModal: React.FC<NavigationModalProps> = ({ isVisible, onClose })
                 color: colors.text,  // Use text color from theme
                 fontFamily: 'JetBrains Mono, monospace',
             }}>
-                <h2 style={{ color: colors.text }}>Navigation</h2>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    <li>
+                {showSettings ? (
+                    <>
+                        <h2 style={{ color: colors.text }}>Settings</h2>
+                        <Settings />  {/* Render Settings component */}
                         <button
-                            onClick={() => onClose()}  // Close the modal via this button
+                            onClick={() => setShowSettings(false)}  // Back to navigation menu
                             style={{
+                                marginTop: '20px',
+                                padding: '10px 20px',
+                                backgroundColor: colors.buttonBackground,  // Use button background from theme
+                                color: colors.text,
+                                border: 'none',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Back to Menu
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <h2 style={{ color: colors.text }}>Navigation</h2>
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            <li>
+                                <button
+                                    onClick={() => setShowSettings(true)}  // Show settings view
+                                    style={{
+                                        backgroundColor: colors.buttonBackground,  // Use button background from theme
+                                        color: colors.text,
+                                        padding: '10px',
+                                        borderRadius: '5px',
+                                        border: 'none',
+                                        width: '100%',
+                                        marginBottom: '10px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Settings
+                                </button>
+                            </li>
+                            {/* You can add more navigation options here */}
+                        </ul>
+                        <button
+                            onClick={onClose}  // Close the modal via this button
+                            style={{
+                                marginTop: '20px',
+                                padding: '10px 20px',
                                 backgroundColor: colors.buttonBackground,
                                 color: colors.text,
-                                padding: '10px',
-                                borderRadius: '5px',
                                 border: 'none',
-                                width: '100%',
-                                marginBottom: '10px',
+                                borderRadius: '10px',
                                 cursor: 'pointer',
                             }}
                         >
                             Close
                         </button>
-                    </li>
-                    {/* Add more navigation options here */}
-                </ul>
+                    </>
+                )}
             </div>
         </div>
     );
